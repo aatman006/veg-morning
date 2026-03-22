@@ -23,8 +23,8 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
 
   // Unit options for different categories
   const unitOptions = {
-    vegetables: ['kg', 'piece', 'bunch'],
-    fruits: ['kg', 'dozen', 'piece'],
+    vegetables: ['kg', 'piece', 'bunch', 'pack', 'box', 'bundle', '250 g', '500 g', '5 kg', '3 kg'],
+    fruits: ['kg', 'dozen', 'piece','box','pack'],
     groceries: ['kg', 'litre', 'pack', 'piece']
   };
 
