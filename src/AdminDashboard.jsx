@@ -1,19 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   X, Save, Edit, Trash2, Plus, Package, 
-  AlertCircle, CheckCircle, Eye, EyeOff,
-  DollarSign, Tag, Search, Filter
+  AlertCircle, CheckCircle, Scale
 } from 'lucide-react';
 
 function AdminDashboard({ products, onUpdateProducts, onClose }) {
-  const [localProducts, setLocalProducts] = useState([]);
+  const [localProducts, setLocalProducts] = useState(products);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [expandedProduct, setExpandedProduct] = useState(null);
   const [newProduct, setNewProduct] = useState({
     name: '',
-    nameHindi: '',
     category: 'vegetables',
     price: '',
     unit: 'kg',
@@ -22,10 +21,12 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
     popular: false
   });
 
-  // Load products when component mounts
-  useEffect(() => {
-    setLocalProducts(products);
-  }, [products]);
+  // Unit options for different categories
+  const unitOptions = {
+    vegetables: ['kg', 'piece', 'bunch'],
+    fruits: ['kg', 'dozen', 'piece'],
+    groceries: ['kg', 'litre', 'pack', 'piece']
+  };
 
   // Categories for filter
   const categories = [
@@ -40,8 +41,7 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
     if (selectedCategory !== 'all' && product.category !== selectedCategory) return false;
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
-      return product.name.toLowerCase().includes(searchLower) ||
-             (product.nameHindi && product.nameHindi.includes(searchTerm));
+      return product.name.toLowerCase().includes(searchLower);
     }
     return true;
   });
@@ -51,6 +51,15 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
     setLocalProducts(prev =>
       prev.map(p =>
         p.id === productId ? { ...p, price: Number(newPrice) } : p
+      )
+    );
+  };
+
+  // Update unit
+  const handleUnitUpdate = (productId, newUnit) => {
+    setLocalProducts(prev =>
+      prev.map(p =>
+        p.id === productId ? { ...p, unit: newUnit } : p
       )
     );
   };
@@ -98,7 +107,6 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
     setLocalProducts(prev => [...prev, productToAdd]);
     setNewProduct({
       name: '',
-      nameHindi: '',
       category: 'vegetables',
       price: '',
       unit: 'kg',
@@ -112,7 +120,12 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
   // Save all changes
   const saveChanges = () => {
     onUpdateProducts(localProducts);
-    alert('Products updated successfully!');
+    alert('✓ All changes saved successfully! They will persist after refresh.');
+  };
+
+  // Get available units for category
+  const getUnitsForCategory = (category) => {
+    return unitOptions[category] || ['kg', 'piece'];
   };
 
   return (
@@ -126,7 +139,9 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
                 <Package className="w-6 h-6 text-green-600" />
                 Admin Dashboard - Product Management
               </h2>
-              <p className="text-gray-600 mt-1">Update prices, stock status, and manage products</p>
+              <p className="text-gray-600 mt-1">
+                Update prices, stock status, and manage products
+              </p>
             </div>
             <div className="flex gap-2">
               <button
@@ -134,13 +149,14 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
                 className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
               >
                 <Save className="w-4 h-4" />
-                Save Changes
+                Save All Changes
               </button>
               <button
                 onClick={onClose}
                 className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300"
               >
                 <X className="w-4 h-4" />
+                Close
               </button>
             </div>
           </div>
@@ -149,13 +165,12 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
           <div className="p-6 border-b bg-gray-50">
             <div className="flex gap-4 flex-wrap">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   type="text"
-                  placeholder="Search products by English or Hindi name..."
+                  placeholder="Search products..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
               </div>
               <select
@@ -184,19 +199,12 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
                 <Plus className="w-4 h-4" />
                 Add New Product
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <input
                   type="text"
-                  placeholder="Product Name (English)"
+                  placeholder="Product Name"
                   value={newProduct.name}
                   onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                  className="px-3 py-2 border rounded-lg"
-                />
-                <input
-                  type="text"
-                  placeholder="Product Name (Hindi)"
-                  value={newProduct.nameHindi}
-                  onChange={(e) => setNewProduct({...newProduct, nameHindi: e.target.value})}
                   className="px-3 py-2 border rounded-lg"
                 />
                 <select
@@ -220,12 +228,9 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
                   onChange={(e) => setNewProduct({...newProduct, unit: e.target.value})}
                   className="px-3 py-2 border rounded-lg"
                 >
-                  <option value="kg">kg</option>
-                  <option value="piece">piece</option>
-                  <option value="bunch">bunch</option>
-                  <option value="dozen">dozen</option>
-                  <option value="litre">litre</option>
-                  <option value="pack">pack</option>
+                  {getUnitsForCategory(newProduct.category).map(unit => (
+                    <option key={unit} value={unit}>{unit}</option>
+                  ))}
                 </select>
                 <input
                   type="text"
@@ -259,7 +264,6 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Product</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Hindi Name</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Category</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Price (₹)</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Unit</th>
@@ -277,19 +281,28 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
                           <span className="font-medium">{product.name}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3">{product.nameHindi || '-'}</td>
                       <td className="px-4 py-3 capitalize">{product.category}</td>
                       <td className="px-4 py-3">
                         <input
                           type="number"
                           value={product.price}
                           onChange={(e) => handlePriceUpdate(product.id, e.target.value)}
-                          className="w-20 px-2 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                          className="w-24 px-2 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                           min="0"
                           step="1"
                         />
                       </td>
-                      <td className="px-4 py-3">{product.unit}</td>
+                      <td className="px-4 py-3">
+                        <select
+                          value={product.unit}
+                          onChange={(e) => handleUnitUpdate(product.id, e.target.value)}
+                          className="px-2 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        >
+                          {getUnitsForCategory(product.category).map(unit => (
+                            <option key={unit} value={unit}>{unit}</option>
+                          ))}
+                        </select>
+                      </td>
                       <td className="px-4 py-3">
                         <button
                           onClick={() => toggleStock(product.id)}
@@ -339,7 +352,7 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
               </table>
             </div>
 
-            {/* Summary */}
+            {/* Summary Statistics */}
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
@@ -365,6 +378,19 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
                   </p>
                 </div>
               </div>
+            </div>
+
+            {/* Instructions */}
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg text-sm text-blue-700">
+              <p className="font-semibold mb-2">📌 How to Use Admin Panel:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Edit prices directly in the table</li>
+                <li>Click "In Stock" button to mark products out of stock</li>
+                <li>Click "Regular" button to mark products as popular</li>
+                <li>Click "Add New Product" to add items</li>
+                <li>Click "Save All Changes" to save everything</li>
+                <li>Changes persist after page refresh!</li>
+              </ul>
             </div>
           </div>
         </div>

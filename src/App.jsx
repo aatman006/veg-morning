@@ -51,25 +51,56 @@ const AdminLogin = ({ onLogin, onClose }) => {
   );
 };
 
-function App() {
-  // Product Database
-  const [products, setProducts] = useState([
-    { id: 1, name: 'Tomatoes', category: 'vegetables', price: 40, unit: 'kg', emoji: '🍅', inStock: true, popular: true },
-    { id: 2, name: 'Potatoes', category: 'vegetables', price: 30, unit: 'kg', emoji: '🥔', inStock: true, popular: true },
-    { id: 3, name: 'Onions', category: 'vegetables', price: 25, unit: 'kg', emoji: '🧅', inStock: true, popular: true },
-    { id: 4, name: 'Spinach', category: 'vegetables', price: 15, unit: 'bunch', emoji: '🥬', inStock: true },
-    { id: 5, name: 'Carrots', category: 'vegetables', price: 40, unit: 'kg', emoji: '🥕', inStock: true },
-    { id: 6, name: 'Cucumber', category: 'vegetables', price: 20, unit: 'kg', emoji: '🥒', inStock: true },
-    { id: 7, name: 'Capsicum', category: 'vegetables', price: 50, unit: 'kg', emoji: '🫑', inStock: true },
-    { id: 8, name: 'Cauliflower', category: 'vegetables', price: 35, unit: 'piece', emoji: '🥦', inStock: true },
-    { id: 9, name: 'Cabbage', category: 'vegetables', price: 30, unit: 'piece', emoji: '🥬', inStock: true },
-    { id: 10, name: 'Green Peas', category: 'vegetables', price: 60, unit: 'kg', emoji: '🫛', inStock: true },
-    { id: 11, name: 'Banana', category: 'fruits', price: 50, unit: 'dozen', emoji: '🍌', inStock: true, popular: true },
-    { id: 12, name: 'Apple', category: 'fruits', price: 120, unit: 'kg', emoji: '🍎', inStock: true, popular: true },
-    { id: 13, name: 'Milk', category: 'groceries', price: 50, unit: 'litre', emoji: '🥛', inStock: true, popular: true },
-    { id: 14, name: 'Eggs', category: 'groceries', price: 6, unit: 'piece', emoji: '🥚', inStock: true, popular: true },
-  ]);
+// ========== DEFAULT PRODUCTS (English Only) ==========
+const DEFAULT_PRODUCTS = [
+  { id: 1, name: 'Tomatoes', category: 'vegetables', price: 40, unit: 'kg', emoji: '🍅', inStock: true, popular: true },
+  { id: 2, name: 'Potatoes', category: 'vegetables', price: 30, unit: 'kg', emoji: '🥔', inStock: true, popular: true },
+  { id: 3, name: 'Onions', category: 'vegetables', price: 25, unit: 'kg', emoji: '🧅', inStock: true, popular: true },
+  { id: 4, name: 'Spinach', category: 'vegetables', price: 15, unit: 'bunch', emoji: '🥬', inStock: true },
+  { id: 5, name: 'Carrots', category: 'vegetables', price: 40, unit: 'kg', emoji: '🥕', inStock: true },
+  { id: 6, name: 'Cucumber', category: 'vegetables', price: 20, unit: 'kg', emoji: '🥒', inStock: true },
+  { id: 7, name: 'Capsicum', category: 'vegetables', price: 50, unit: 'kg', emoji: '🫑', inStock: true },
+  { id: 8, name: 'Cauliflower', category: 'vegetables', price: 35, unit: 'piece', emoji: '🥦', inStock: true },
+  { id: 9, name: 'Cabbage', category: 'vegetables', price: 30, unit: 'piece', emoji: '🥬', inStock: true },
+  { id: 10, name: 'Green Peas', category: 'vegetables', price: 60, unit: 'kg', emoji: '🫛', inStock: true },
+  { id: 11, name: 'Banana', category: 'fruits', price: 50, unit: 'dozen', emoji: '🍌', inStock: true, popular: true },
+  { id: 12, name: 'Apple', category: 'fruits', price: 120, unit: 'kg', emoji: '🍎', inStock: true, popular: true },
+  { id: 13, name: 'Milk', category: 'groceries', price: 50, unit: 'litre', emoji: '🥛', inStock: true, popular: true },
+  { id: 14, name: 'Eggs', category: 'groceries', price: 6, unit: 'piece', emoji: '🥚', inStock: true, popular: true },
+];
 
+// Storage key
+const STORAGE_KEY = 'veg_morning_products';
+
+// Load products from localStorage
+const loadProducts = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (error) {
+    console.error('Error loading products:', error);
+  }
+  return DEFAULT_PRODUCTS;
+};
+
+// Save products to localStorage
+const saveProducts = (products) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+  } catch (error) {
+    console.error('Error saving products:', error);
+  }
+};
+
+function App() {
+  // Load products from localStorage on startup
+  const [products, setProducts] = useState(loadProducts);
+  
   // Admin access state
   const [showAdmin, setShowAdmin] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
@@ -102,6 +133,13 @@ function App() {
     });
   };
 
+  // Update products from admin and save to localStorage
+  const handleUpdateProducts = (updatedProducts) => {
+    setProducts(updatedProducts);
+    saveProducts(updatedProducts);
+    alert('✓ Changes saved! They will remain after refresh.');
+  };
+
   // Customer view state
   const [quantities, setQuantities] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
@@ -127,10 +165,6 @@ function App() {
 
   const cartCount = cartItems.length;
   const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-  const handleUpdateProducts = (updatedProducts) => {
-    setProducts(updatedProducts);
-  };
 
   const updateQuantity = (productId, delta) => {
     setQuantities(prev => {
@@ -224,7 +258,7 @@ function App() {
         />
       )}
 
-      {/* Header - Green Gradient */}
+      {/* Header */}
       <header className="bg-gradient-to-r from-green-600 to-green-500 text-white p-4 sticky top-0 z-20 shadow-lg">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -235,7 +269,6 @@ function App() {
             </div>
           </div>
           
-          {/* Cart Button */}
           <button 
             onClick={toggleOrderSummary}
             className="relative p-2 hover:bg-green-700 rounded-full transition bg-green-700 bg-opacity-20"
@@ -250,7 +283,7 @@ function App() {
         </div>
       </header>
 
-      {/* Search Bar - Morning Theme */}
+      {/* Search Bar */}
       <div className="sticky top-16 bg-white bg-opacity-90 backdrop-blur-sm shadow-md p-4 z-10">
         <div className="max-w-7xl mx-auto">
           <div className="flex gap-2">
@@ -273,7 +306,6 @@ function App() {
             </button>
           </div>
 
-          {/* Categories */}
           {showFilters && (
             <div className="mt-4 flex flex-wrap gap-2">
               {categories.map(category => (
@@ -353,7 +385,6 @@ function App() {
                       ))}
                     </div>
                     
-                    {/* Total */}
                     <div className="mt-4 p-4 bg-orange-100 rounded-lg">
                       <div className="flex justify-between items-center text-lg font-bold">
                         <span>Total Amount:</span>
@@ -410,12 +441,18 @@ function App() {
                           <option value="9-10 AM">9-10 AM</option>
                           <option value="10-11 AM">10-11 AM</option>
                           <option value="11-12 PM">11-12 PM</option>
-
+                          <option value="12-1 PM">12-1 PM</option>
+                          <option value="1-2 PM">1-2 PM</option>
+                          <option value="2-3 PM">2-3 PM</option>
+                          <option value="3-4 PM">3-4 PM</option>
+                          <option value="4-5 PM">4-5 PM</option>
+                          <option value="5-6 PM">5-6 PM</option>
+                          <option value="6-7 PM">6-7 PM</option>
+                          <option value="7-8 PM">7-8 PM</option>
                         </select>
                       </div>
                     </div>
 
-                    {/* Action Buttons */}
                     <div className="mt-6 space-y-3">
                       <button
                         onClick={sendWhatsAppOrder}
