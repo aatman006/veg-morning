@@ -11,6 +11,7 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [expandedProduct, setExpandedProduct] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [newProduct, setNewProduct] = useState({
     name: '',
     category: 'vegetables',
@@ -23,9 +24,9 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
 
   // Unit options for different categories
   const unitOptions = {
-    vegetables: ['kg', 'piece', 'bunch', 'pack', 'box', 'bundle', '250 g', '500 g', '5 kg', '3 kg'],
+    vegetables: ['kg', 'piece', 'bunch','250 g','500 g','3 kg','5 kg','pack','box'],
     fruits: ['kg', 'dozen', 'piece','box','pack'],
-    groceries: ['kg', 'litre', 'pack', 'piece']
+    groceries: ['kg', 'litre', 'pack', 'piece','box','250 g','500 g']
   };
 
   // Categories for filter
@@ -117,10 +118,19 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
     setShowAddForm(false);
   };
 
-  // Save all changes
-  const saveChanges = () => {
-    onUpdateProducts(localProducts);
-    alert('✓ All changes saved successfully! They will persist after refresh.');
+  // Save all changes to database (calls parent's onUpdateProducts)
+  const saveChanges = async () => {
+    setSaving(true);
+    try {
+      // Call the parent function which will update Supabase
+      await onUpdateProducts(localProducts);
+      alert('✓ All changes saved to database! All devices will see updates.');
+    } catch (error) {
+      console.error('Error saving:', error);
+      alert('Failed to save changes. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Get available units for category
@@ -142,14 +152,31 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
               <p className="text-gray-600 mt-1">
                 Update prices, stock status, and manage products
               </p>
+              <p className="text-sm text-blue-600 mt-1">
+                ⚡ Changes will be saved to cloud database and appear on all devices
+              </p>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={saveChanges}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
+                disabled={saving}
+                className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+                  saving 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-green-600 hover:bg-green-700'
+                } text-white`}
               >
-                <Save className="w-4 h-4" />
-                Save All Changes
+                {saving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Save All to Cloud
+                  </>
+                )}
               </button>
               <button
                 onClick={onClose}
@@ -245,7 +272,7 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
                   onClick={addProduct}
                   className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
                 >
-                  Add Product
+                  Add Product (Local)
                 </button>
                 <button
                   onClick={() => setShowAddForm(false)}
@@ -254,6 +281,9 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
                   Cancel
                 </button>
               </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Note: Click "Save All to Cloud" after adding to save to database
+              </p>
             </div>
           )}
 
@@ -378,19 +408,6 @@ function AdminDashboard({ products, onUpdateProducts, onClose }) {
                   </p>
                 </div>
               </div>
-            </div>
-
-            {/* Instructions */}
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg text-sm text-blue-700">
-              <p className="font-semibold mb-2">📌 How to Use Admin Panel:</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>Edit prices directly in the table</li>
-                <li>Click "In Stock" button to mark products out of stock</li>
-                <li>Click "Regular" button to mark products as popular</li>
-                <li>Click "Add New Product" to add items</li>
-                <li>Click "Save All Changes" to save everything</li>
-                <li>Changes persist after page refresh!</li>
-              </ul>
             </div>
           </div>
         </div>

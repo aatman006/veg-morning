@@ -3,7 +3,32 @@ import {
   Search, ShoppingCart, Filter, X, Plus, Minus, 
   Leaf, Clock, MapPin, Phone, User
 } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 import AdminDashboard from './AdminDashboard';
+
+// ========== SUPABASE CONFIGURATION ==========
+// Replace with your actual Supabase URL and anon key
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Default products (fallback if database fails)
+const DEFAULT_PRODUCTS = [
+  { id: 1, name: 'Tomatoes', category: 'vegetables', price: 40, unit: 'kg', emoji: '🍅', inStock: true, popular: true },
+  { id: 2, name: 'Potatoes', category: 'vegetables', price: 30, unit: 'kg', emoji: '🥔', inStock: true, popular: true },
+  { id: 3, name: 'Onions', category: 'vegetables', price: 25, unit: 'kg', emoji: '🧅', inStock: true, popular: true },
+  { id: 4, name: 'Spinach', category: 'vegetables', price: 15, unit: 'bunch', emoji: '🥬', inStock: true },
+  { id: 5, name: 'Carrots', category: 'vegetables', price: 40, unit: 'kg', emoji: '🥕', inStock: true },
+  { id: 6, name: 'Cucumber', category: 'vegetables', price: 20, unit: 'kg', emoji: '🥒', inStock: true },
+  { id: 7, name: 'Capsicum', category: 'vegetables', price: 50, unit: 'kg', emoji: '🫑', inStock: true },
+  { id: 8, name: 'Cauliflower', category: 'vegetables', price: 35, unit: 'piece', emoji: '🥦', inStock: true },
+  { id: 9, name: 'Cabbage', category: 'vegetables', price: 30, unit: 'piece', emoji: '🥬', inStock: true },
+  { id: 10, name: 'Green Peas', category: 'vegetables', price: 60, unit: 'kg', emoji: '🫛', inStock: true },
+  { id: 11, name: 'Banana', category: 'fruits', price: 50, unit: 'dozen', emoji: '🍌', inStock: true, popular: true },
+  { id: 12, name: 'Apple', category: 'fruits', price: 120, unit: 'kg', emoji: '🍎', inStock: true, popular: true },
+  { id: 13, name: 'Milk', category: 'groceries', price: 50, unit: 'litre', emoji: '🥛', inStock: true, popular: true },
+  { id: 14, name: 'Eggs', category: 'groceries', price: 6, unit: 'piece', emoji: '🥚', inStock: true, popular: true },
+];
 
 // Admin Login Component
 const AdminLogin = ({ onLogin, onClose }) => {
@@ -51,61 +76,161 @@ const AdminLogin = ({ onLogin, onClose }) => {
   );
 };
 
-// ========== DEFAULT PRODUCTS (English Only) ==========
-const DEFAULT_PRODUCTS = [
-  { id: 1, name: 'Tomatoes', category: 'vegetables', price: 40, unit: 'kg', emoji: '🍅', inStock: true, popular: true },
-  { id: 2, name: 'Potatoes', category: 'vegetables', price: 30, unit: 'kg', emoji: '🥔', inStock: true, popular: true },
-  { id: 3, name: 'Onions', category: 'vegetables', price: 25, unit: 'kg', emoji: '🧅', inStock: true, popular: true },
-  { id: 4, name: 'Spinach', category: 'vegetables', price: 15, unit: 'bunch', emoji: '🥬', inStock: true },
-  { id: 5, name: 'Carrots', category: 'vegetables', price: 40, unit: 'kg', emoji: '🥕', inStock: true },
-  { id: 6, name: 'Cucumber', category: 'vegetables', price: 20, unit: 'kg', emoji: '🥒', inStock: true },
-  { id: 7, name: 'Capsicum', category: 'vegetables', price: 50, unit: 'kg', emoji: '🫑', inStock: true },
-  { id: 8, name: 'Cauliflower', category: 'vegetables', price: 35, unit: 'piece', emoji: '🥦', inStock: true },
-  { id: 9, name: 'Cabbage', category: 'vegetables', price: 30, unit: 'piece', emoji: '🥬', inStock: true },
-  { id: 10, name: 'Green Peas', category: 'vegetables', price: 60, unit: 'kg', emoji: '🫛', inStock: true },
-  { id: 11, name: 'Banana', category: 'fruits', price: 50, unit: 'dozen', emoji: '🍌', inStock: true, popular: true },
-  { id: 12, name: 'Apple', category: 'fruits', price: 120, unit: 'kg', emoji: '🍎', inStock: true, popular: true },
-  { id: 13, name: 'Milk', category: 'groceries', price: 50, unit: 'litre', emoji: '🥛', inStock: true, popular: true },
-  { id: 14, name: 'Eggs', category: 'groceries', price: 6, unit: 'piece', emoji: '🥚', inStock: true, popular: true },
-];
-
-// Storage key
-const STORAGE_KEY = 'veg_morning_products';
-
-// Load products from localStorage
-const loadProducts = () => {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
-    }
-  } catch (error) {
-    console.error('Error loading products:', error);
-  }
-  return DEFAULT_PRODUCTS;
-};
-
-// Save products to localStorage
-const saveProducts = (products) => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
-  } catch (error) {
-    console.error('Error saving products:', error);
-  }
-};
-
 function App() {
-  // Load products from localStorage on startup
-  const [products, setProducts] = useState(loadProducts);
+  // Product state
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   // Admin access state
   const [showAdmin, setShowAdmin] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   
-  // URL Parameter Access
+  // Customer view state
+  const [quantities, setQuantities] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [showFilters, setShowFilters] = useState(false);
+  const [showOrderSummary, setShowOrderSummary] = useState(false);
+  
+  const [deliveryDetails, setDeliveryDetails] = useState({
+    name: '',
+    address: '',
+    phone: '',
+    time: ''
+  });
+
+  // ========== LOAD PRODUCTS FROM SUPABASE ==========
+  const loadProducts = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('id');
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setProducts(data);
+      } else {
+        // If no data in database, use defaults
+        setProducts(DEFAULT_PRODUCTS);
+      }
+    } catch (err) {
+      console.error('Error loading products:', err);
+      setError('Failed to load products. Using default data.');
+      setProducts(DEFAULT_PRODUCTS);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ========== UPDATE PRODUCT IN SUPABASE ==========
+  const updateProductInDB = async (productId, updates) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update(updates)
+        .eq('id', productId);
+      
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.error('Error updating product:', err);
+      alert('Failed to update product. Please try again.');
+      return false;
+    }
+  };
+
+  // ========== ADD NEW PRODUCT TO SUPABASE ==========
+  const addProductToDB = async (newProduct) => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .insert([newProduct])
+        .select();
+      
+      if (error) throw error;
+      return data[0];
+    } catch (err) {
+      console.error('Error adding product:', err);
+      alert('Failed to add product. Please try again.');
+      return null;
+    }
+  };
+
+  // ========== DELETE PRODUCT FROM SUPABASE ==========
+  const deleteProductFromDB = async (productId) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId);
+      
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.error('Error deleting product:', err);
+      alert('Failed to delete product. Please try again.');
+      return false;
+    }
+  };
+
+  // ========== UPDATE PRODUCTS FROM ADMIN DASHBOARD ==========
+  const handleUpdateProducts = async (updatedProducts) => {
+    setLoading(true);
+    
+    try {
+      // Compare and update each product
+      for (const product of updatedProducts) {
+        const existingProduct = products.find(p => p.id === product.id);
+        
+        if (existingProduct) {
+          // Update existing product
+          const updates = {};
+          if (existingProduct.price !== product.price) updates.price = product.price;
+          if (existingProduct.unit !== product.unit) updates.unit = product.unit;
+          if (existingProduct.inStock !== product.inStock) updates.inStock = product.inStock;
+          if (existingProduct.popular !== product.popular) updates.popular = product.popular;
+          
+          if (Object.keys(updates).length > 0) {
+            await updateProductInDB(product.id, updates);
+          }
+        } else {
+          // Add new product
+          const { name, category, price, unit, emoji, inStock, popular } = product;
+          await addProductToDB({ name, category, price, unit, emoji, inStock, popular });
+        }
+      }
+      
+      // Check for deleted products
+      for (const existingProduct of products) {
+        const stillExists = updatedProducts.find(p => p.id === existingProduct.id);
+        if (!stillExists) {
+          await deleteProductFromDB(existingProduct.id);
+        }
+      }
+      
+      // Reload all products
+      await loadProducts();
+      alert('✓ All changes saved to database! All devices will see updates.');
+    } catch (err) {
+      console.error('Error saving changes:', err);
+      alert('Failed to save changes. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load products on component mount
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  // URL Parameter Admin Access
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const adminKey = urlParams.get('admin');
@@ -132,27 +257,6 @@ function App() {
       return newCount;
     });
   };
-
-  // Update products from admin and save to localStorage
-  const handleUpdateProducts = (updatedProducts) => {
-    setProducts(updatedProducts);
-    saveProducts(updatedProducts);
-    alert('✓ Changes saved! They will remain after refresh.');
-  };
-
-  // Customer view state
-  const [quantities, setQuantities] = useState({});
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [showFilters, setShowFilters] = useState(false);
-  const [showOrderSummary, setShowOrderSummary] = useState(false);
-  
-  const [deliveryDetails, setDeliveryDetails] = useState({
-    name: '',
-    address: '',
-    phone: '',
-    time: ''
-  });
 
   const availableProducts = products.filter(p => p.inStock);
 
@@ -213,7 +317,7 @@ function App() {
     message += `\n⏰ Time: ${deliveryDetails.time}`;
     
     const phoneNumber = "919310321029";
-    window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');
+    window.open(`https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const clearCart = () => {
@@ -230,8 +334,27 @@ function App() {
     }
   };
 
+  // Show loading state
+  if (loading && products.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-orange-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-orange-50">
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded m-4">
+          {error}
+        </div>
+      )}
+
       {/* Secret admin click area */}
       <div 
         onClick={handleSecretClick}
@@ -265,7 +388,7 @@ function App() {
             <Leaf className="w-8 h-8" />
             <div>
               <h1 className="text-2xl font-bold">Veg Morning</h1>
-              <p className="text-sm text-green-100">{availableProducts.length} Products Available 🆓🚚₹100+</p>
+              <p className="text-sm text-green-100">{availableProducts.length} Products Available 🆓⛟₹99+</p>
             </div>
           </div>
           
