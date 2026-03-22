@@ -265,7 +265,7 @@ function App() {
             <Leaf className="w-8 h-8" />
             <div>
               <h1 className="text-2xl font-bold">Veg Morning</h1>
-              <p className="text-sm text-green-100">{availableProducts.length} Products Available</p>
+              <p className="text-sm text-green-100">{availableProducts.length} Products Available 🆓🚚₹100+</p>
             </div>
           </div>
           
@@ -441,14 +441,6 @@ function App() {
                           <option value="9-10 AM">9-10 AM</option>
                           <option value="10-11 AM">10-11 AM</option>
                           <option value="11-12 PM">11-12 PM</option>
-                          <option value="12-1 PM">12-1 PM</option>
-                          <option value="1-2 PM">1-2 PM</option>
-                          <option value="2-3 PM">2-3 PM</option>
-                          <option value="3-4 PM">3-4 PM</option>
-                          <option value="4-5 PM">4-5 PM</option>
-                          <option value="5-6 PM">5-6 PM</option>
-                          <option value="6-7 PM">6-7 PM</option>
-                          <option value="7-8 PM">7-8 PM</option>
                         </select>
                       </div>
                     </div>
